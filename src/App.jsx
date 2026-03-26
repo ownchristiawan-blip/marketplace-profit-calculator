@@ -16,7 +16,7 @@ export default function App() {
   const [packing, setPacking] = useState("");
   const [hargaJual, setHargaJual] = useState("");
   const [result, setResult] = useState(null);
-
+  
   const calculatePrice = () => {
     const m = Number(modal || 0);
     const f = Number(fee || 0);
@@ -83,6 +83,35 @@ export default function App() {
       profit,
     });
   };
+
+  const getDecision = (profit) => {
+    if (profit <= 0) {
+      return {
+        label: "Tidak Disarankan",
+        color: "text-red-500",
+        bg: "bg-red-50",
+        border: "border-red-200",
+      };
+    }
+
+    if (profit < 8000) {
+      return {
+        label: "Margin Tipis",
+        color: "text-yellow-600",
+        bg: "bg-yellow-50",
+        border: "border-yellow-200",
+      };
+    }
+
+    return {
+      label: "Layak Jual",
+      color: "text-green-600",
+      bg: "bg-green-50",
+      border: "border-green-200",
+    };
+  };
+
+  const decision = breakdown ? getDecision(breakdown.profit) : null;
 
   const simulate = () => {
     const hj = Number(hargaJual || 0);
@@ -382,9 +411,16 @@ export default function App() {
               <div className={`font-semibold ${breakdown.profit > 0 ? "text-green-600" : "text-red-500"}`}>
                 Profit: Rp {Math.round(breakdown.profit).toLocaleString("id-ID")}
               </div>
+
+              {decision && (
+                <div className={`mt-3 p-2 rounded-md border ${decision.bg} ${decision.border}`}>
+                  <div className={`font-semibold text-center ${decision.color}`}>
+                    {decision.label}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-
         </CardContent>
       </Card>
     </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import pkg from "../package.json";
 
 export default function App() {
   const [tab, setTab] = useState("price");
@@ -85,7 +86,7 @@ export default function App() {
   };
 
   const getDecision = (profit) => {
-    if (profit <= 0) {
+    if (profit <= 2000) {
       return {
         label: "Tidak Disarankan",
         color: "text-red-500",
@@ -94,7 +95,7 @@ export default function App() {
       };
     }
 
-    if (profit < 8000) {
+    if (profit > 2000 && profit <= 7000) {
       return {
         label: "Margin Tipis",
         color: "text-yellow-600",
@@ -138,7 +139,7 @@ export default function App() {
         <CardContent className="p-8 space-y-6">
 
           <h1 className="text-2xl font-bold text-center">
-            Shopee Calculator Pro
+            Marketplace Profit Calculator
           </h1>
 
           {/* TAB BUTTONS */}
@@ -421,6 +422,10 @@ export default function App() {
               )}
             </div>
           )}
+
+          <div className="text-xs text-gray-400 text-center mt-4">
+            v{pkg.version} • Built by ownch
+          </div>
         </CardContent>
       </Card>
     </div>

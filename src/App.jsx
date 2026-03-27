@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ export default function App() {
   const [packing, setPacking] = useState("");
   const [hargaJual, setHargaJual] = useState("");
   const [result, setResult] = useState(null);
+  const scrollRef = useRef(null);
+  const [showFade, setShowFade] = useState(false);
   
   const calculatePrice = () => {
     const m = Number(modal || 0);
@@ -133,12 +135,34 @@ export default function App() {
     setResult(profitPerOrder * 100);
   };
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const checkScroll = () => {
+      const isScrollable = el.scrollHeight > el.clientHeight;
+      const isAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+
+      setShowFade(isScrollable && !isAtBottom);
+    };
+
+    checkScroll();
+
+    el.addEventListener("scroll", checkScroll);
+    window.addEventListener("resize", checkScroll);
+
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [result, breakdown, tab]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <Card className="w-full max-w-md shadow-xl rounded-2xl">
-        <CardContent className="p-8 space-y-6">
+      <Card className="flex flex-col w-full max-w-md shadow-xl rounded-2xl mx-auto h-[680px] transition-all duration-200 ease-in-out">
+        <CardContent className="p-8 flex flex-col flex-1 h-full">
 
-          <h1 className="text-2xl font-bold text-center">
+          <h1 className="text-2xl font-bold text-center mb-6">
             Marketplace Profit Calculator
           </h1>
 
@@ -169,261 +193,287 @@ export default function App() {
               Simulasi
             </button>
           </div>
+          
+          <div className="relative flex-1 min-h-0">
 
-          {/* ================= PRICE ================= */}
-          {tab === "price" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-sm text-gray-600 col-span-2 text-center">
-                  Masukkan biaya dan target profit untuk menentukan harga jual ideal
-                </div>
-                <div className="text-xs text-gray-500 text-center col-span-2 -mt-1 mb-2">
-                  Semakin tinggi biaya, semakin tinggi harga jual yang dibutuhkan
-                </div>
-
-                <div className="text-xs font-semibold text-gray-500 mt-2 col-span-2 text-center tracking-wide">
-                  BIAYA
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-500">Modal</div>
-                  <Input 
-                    value={modal} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setModal(value);
-                      } 
-                    }}
-                    placeholder="Contoh: 50000" 
-                    type="text"
-                    inputMode="numeric"
-                  />
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-500">Biaya Marketplace (%)</div>
-                  <Input 
-                    value={fee} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setFee(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 2.5" 
-                    type="text"
-                    inputMode="numeric"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-500">Biaya Afiliasi (%)</div>
-                  <Input 
-                    value={affiliate} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setAffiliate(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 3"
-                    type="text"
-                    inputMode="numeric"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-500">Biaya Voucher (%)</div>
-                  <Input 
-                    value={voucher} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setVoucher(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 5" 
-                    type="text"
-                    inputMode="numeric"
-                    step="0.1"
-                    min="0"
-                    max="100"  
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-500">Ongkos Kirim</div>
-                  <Input 
-                    value={ongkir} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setOngkir(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 10000" 
-                    type="text"
-                    inputMode="numeric"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-500">Biaya Packing</div>    
-                  <Input 
-                    value={packing} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setPacking(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 5000" 
-                    type="text"
-                    inputMode="numeric"
-                  />
-                </div>
-              </div>
+            <div ref={scrollRef} className="h-full min-h-0 pr-2 overflow-y-scroll">
               
-              <div className="text-xs font-semibold text-gray-500 mt-2 col-span-2 text-center tracking-wide">TARGET</div>
-              <div className="space-y-1">
-                <div className="text-xs text-gray-500">Target Profit (%)</div>
-                <Input value={target} onChange={(e) => {
-                  const value = e.target.value;
-                    if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                      setTarget(value);
-                    }
-                  }} 
-                  placeholder="Contoh: 20" 
-                  type="text"
-                  inputMode="numeric"
-                />
-              </div>
+              {/* ================= PRICE ================= */}
+              {tab === "price" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-sm text-gray-600 col-span-2 text-center">
+                      Masukkan biaya dan target profit untuk menentukan harga jual ideal
+                    </div>
+                    <div className="text-xs text-gray-500 text-center col-span-2 -mt-1 mb-2">
+                      Semakin tinggi biaya, semakin tinggi harga jual yang dibutuhkan
+                    </div>
 
-              <Button onClick={calculatePrice} className="w-full bg-blue-600 text-white hover:bg-blue-700">
-                Hitung Harga Jual
-              </Button>
-            </div>
-          )}
+                    <div className="text-xs font-semibold text-gray-500 mt-2 col-span-2 text-center tracking-wide">
+                      BIAYA
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">Modal</div>
+                      <Input 
+                        value={modal} 
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-          {/* ================= PROFIT ================= */}
-          {tab === "profit" && (
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <div className="text-sm text-gray-600 text-center">
-                  Masukkan harga kompetitor untuk mengetahui profit yang bisa Anda dapatkan
-                </div>
-                <div className="text-xs text-gray-400 mt-1 text-center tracking-wide">
-                  Menggunakan biaya yang telah Anda masukkan sebelumnya
-                </div>
-                <div className="text-xs text-gray-500">Harga Kompetitor</div>
-                <Input value={hargaJual} onChange={(e) => {
-                      const value = e.target.value;
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setModal(value);
+                          } 
+                        }}
+                        placeholder="Contoh: 50000" 
+                        type="text"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">Biaya Marketplace (%)</div>
+                      <Input 
+                        value={fee} 
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setHargaJual(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 50000" 
-                    type="text"
-                    inputMode="numeric"
-                  />
-              </div>
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setFee(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 2.5" 
+                        type="text"
+                        inputMode="numeric"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
 
-              <Button onClick={calculateProfit} className="w-full bg-blue-600 text-white hover:bg-blue-700">
-                Cek Profit
-              </Button>
-            </div>
-          )}
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">Biaya Afiliasi (%)</div>
+                      <Input 
+                        value={affiliate} 
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-          {/* ================= SIMULASI ================= */}
-          {tab === "simulasi" && (
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <div className="text-sm text-gray-600 text-center">
-                  Simulasikan total keuntungan dari penjualan dalam jumlah besar
-                </div>
-                <div className="text-xs text-gray-400 mt-1 text-center tracking-wide">
-                  Menggunakan biaya yang telah Anda masukkan sebelumnya
-                </div>
-                <div className="text-xs text-gray-500">Harga Jual per Produk (Rp)</div>
-                <Input value={hargaJual} onChange={(e) => {
-                      const value = e.target.value;
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setAffiliate(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 3"
+                        type="text"
+                        inputMode="numeric"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">Biaya Voucher (%)</div>
+                      <Input 
+                        value={voucher} 
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                      // hanya angka + titik
-                      if (/^[0-9]*\.?[0-9]*$/.test(value)) {
-                        setHargaJual(value);
-                      }
-                    }} 
-                    placeholder="Contoh: 50000" 
-                    type="text"
-                    inputMode="numeric"
-                  />
-              </div>
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setVoucher(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 5" 
+                        type="text"
+                        inputMode="numeric"
+                        step="0.1"
+                        min="0"
+                        max="100"  
+                      />
+                    </div>
 
-              <Button onClick={simulate} className="w-full bg-blue-600 text-white hover:bg-blue-700">
-                Hitung Profit untuk 100 Order
-              </Button>
-            </div>
-          )}
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">Ongkos Kirim</div>
+                      <Input 
+                        value={ongkir} 
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-          {error && (
-            <div className="mt-2 bg-red-100 text-red-600 border border-red-300 text-sm text-center p-2 rounded-md">
-              {error}
-            </div>
-          )}
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setOngkir(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 10000" 
+                        type="text"
+                        inputMode="numeric"
+                      />
+                    </div>
 
-          {/* RESULT */}
-          {result !== null && (
-            <div className={`text-center text-xl font-semibold ${
-              result > 0 ? "text-green-600" : "text-red-500"
-            }`}>
-              Hasil: Rp {Math.round(result).toLocaleString("id-ID")}
-            </div>
-          )}
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500">Biaya Packing</div>    
+                      <Input 
+                        value={packing} 
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-          {breakdown && tab !== "simulasi" && (
-            <div className="text-sm bg-gray-50 p-3 rounded-lg space-y-1 mt-3">
-              <div className="text-xs text-gray-500">Rincian Biaya</div>
-              <div>Fee Shopee: Rp {Math.round(breakdown.feeShopee).toLocaleString("id-ID")}</div>
-              <div>Affiliate: Rp {Math.round(breakdown.feeAffiliate).toLocaleString("id-ID")}</div>
-              <div>Voucher: Rp {Math.round(breakdown.feeVoucher).toLocaleString("id-ID")}</div>
-              <div className="font-semibold border-t pt-1">
-                Total Potongan: Rp {Math.round(breakdown.totalPotongan).toLocaleString("id-ID")}
-              </div>
-              <div className={`font-semibold ${breakdown.profit > 0 ? "text-green-600" : "text-red-500"}`}>
-                Profit: Rp {Math.round(breakdown.profit).toLocaleString("id-ID")}
-              </div>
-
-              {decision && (
-                <div className={`mt-3 p-2 rounded-md border ${decision.bg} ${decision.border}`}>
-                  <div className={`font-semibold text-center ${decision.color}`}>
-                    {decision.label}
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setPacking(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 5000" 
+                        type="text"
+                        inputMode="numeric"
+                      />
+                    </div>
                   </div>
+                  
+                  <div className="text-xs font-semibold text-gray-500 mt-2 col-span-2 text-center tracking-wide">TARGET</div>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-500">Target Profit (%)</div>
+                    <Input value={target} onChange={(e) => {
+                      const value = e.target.value;
+                        if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                          setTarget(value);
+                        }
+                      }} 
+                      placeholder="Contoh: 20" 
+                      type="text"
+                      inputMode="numeric"
+                    />
+                  </div>
+
+                  <Button onClick={calculatePrice} className="w-full bg-blue-600 text-white hover:bg-blue-700">
+                    Hitung Harga Jual
+                  </Button>
+                </div>
+              )}
+
+              {/* ================= PROFIT ================= */}
+              {tab === "profit" && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-600 text-center">
+                      Masukkan harga kompetitor untuk mengetahui profit yang bisa Anda dapatkan
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1 text-center tracking-wide">
+                      Menggunakan biaya yang telah Anda masukkan sebelumnya
+                    </div>
+                    <div className="text-xs text-gray-500">Harga Kompetitor</div>
+                    <Input value={hargaJual} onChange={(e) => {
+                          const value = e.target.value;
+
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setHargaJual(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 50000" 
+                        type="text"
+                        inputMode="numeric"
+                      />
+                  </div>
+
+                  <Button onClick={calculateProfit} className="w-full bg-blue-600 text-white hover:bg-blue-700">
+                    Cek Profit
+                  </Button>
+
+                  {result === null && (
+                    <div className="text-center text-sm text-gray-400 mt-6">
+                      Masukkan harga kompetitor untuk melihat estimasi profit Anda
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ================= SIMULASI ================= */}
+              {tab === "simulasi" && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-600 text-center">
+                      Simulasikan total keuntungan dari penjualan dalam jumlah besar
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1 text-center tracking-wide">
+                      Menggunakan biaya yang telah Anda masukkan sebelumnya
+                    </div>
+                    <div className="text-xs text-gray-500">Harga Jual per Produk (Rp)</div>
+                    <Input value={hargaJual} onChange={(e) => {
+                          const value = e.target.value;
+
+                          // hanya angka + titik
+                          if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                            setHargaJual(value);
+                          }
+                        }} 
+                        placeholder="Contoh: 50000" 
+                        type="text"
+                        inputMode="numeric"
+                      />
+                  </div>
+
+                  <Button onClick={simulate} className="w-full bg-blue-600 text-white hover:bg-blue-700">
+                    Hitung Profit untuk 100 Order
+                  </Button>
+
+                  {result === null && (
+                    <div className="text-center text-sm text-gray-400 mt-6">
+                      Masukkan harga jual untuk melihat estimasi profit untuk 100 pesanan
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-2 bg-red-100 text-red-600 border border-red-300 text-sm text-center p-2 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              {/* RESULT */}
+              {result !== null && (
+                <div className={`mt-3 text-center text-xl font-semibold ${
+                  result > 0 ? "text-green-600" : "text-red-500"
+                }`}>
+                  Hasil: Rp {Math.round(result).toLocaleString("id-ID")}
+                </div>
+              )}
+
+              {breakdown && tab !== "simulasi" && (
+                <div className="text-sm bg-gray-50 p-3 rounded-lg space-y-1 mt-4">
+                  <div className="text-xs text-gray-500">Rincian Biaya</div>
+                  <div>Fee Shopee: Rp {Math.round(breakdown.feeShopee).toLocaleString("id-ID")}</div>
+                  <div>Affiliate: Rp {Math.round(breakdown.feeAffiliate).toLocaleString("id-ID")}</div>
+                  <div>Voucher: Rp {Math.round(breakdown.feeVoucher).toLocaleString("id-ID")}</div>
+                  <div className="font-semibold border-t pt-1">
+                    Total Potongan: Rp {Math.round(breakdown.totalPotongan).toLocaleString("id-ID")}
+                  </div>
+                  <div className={`font-semibold ${breakdown.profit > 0 ? "text-green-600" : "text-red-500"}`}>
+                    Profit: Rp {Math.round(breakdown.profit).toLocaleString("id-ID")}
+                  </div>
+
+                  {decision && (
+                    <div className={`mt-3 p-2 rounded-md border ${decision.bg} ${decision.border}`}>
+                      <div className={`font-semibold text-center ${decision.color}`}>
+                        {decision.label}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          
+            {/* GRADIENT FADE */}
+            <div
+              className={`pointer-events-none absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-gray-100/90 to-transparent transition-opacity duration-300 ease-in-out ${
+                showFade ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          </div>
 
-          <div className="text-xs text-gray-400 text-center mt-4">
+          {/* FOOTER */}
+          <div className="text-xs text-gray-400 text-center mt-auto pt-4">
             v{pkg.version} • Built by ownch
           </div>
         </CardContent>
